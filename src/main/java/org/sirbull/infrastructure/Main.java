@@ -1,4 +1,10 @@
-package org.sirbull;
+package org.sirbull.infrastructure;
+
+import org.sirbull.domain.model.CronogramaPago;
+import org.sirbull.domain.model.CuentaBancaria;
+import org.sirbull.domain.model.EstadoCuenta;
+import org.sirbull.domain.model.TarjetaCredito;
+import org.sirbull.domain.service.FinanzasUtil;
 
 public class Main {
     public static void main(String[] args) {
@@ -25,8 +31,8 @@ public class Main {
         miTarjeta.comprar(1800);
         System.out.println("Mi deuda final es: " + miTarjeta.getDeudaActual());
 
-        double calcularInteres = FinanzasUtil.calcularInteresSimple(2500.00, 48.80, 12);
-        System.out.println("el interes de este prestamos es de :" + calcularInteres);
+
+
 
         miCuenta.CambiarEstado(EstadoCuenta.BLOQUEADA);
 
@@ -34,6 +40,7 @@ public class Main {
 
         System.out.println("REALIZAR COMPRA");
         miCuenta.retirar(400);
+
 
 
 

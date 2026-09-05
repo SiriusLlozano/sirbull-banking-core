@@ -1,4 +1,4 @@
-package org.sirbull;
+package org.sirbull.domain.model;
 
 public class CuentaBancaria {
 
