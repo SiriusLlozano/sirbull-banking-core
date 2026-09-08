@@ -2,12 +2,38 @@ package org.sirbull.domain.model;
 
 import org.sirbull.domain.service.FinanzasUtil;
 
+import javax.swing.plaf.PanelUI;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CronogramaPago {
 
-    public static void cronogramaPago(
+    // ATRIBUTOS DE INSTANCIA ALMACENARA INORMACION DE CAD ACUOTA
+    private int numeroCuota;
+    private double interes;
+    private double amortizacion;
+    private double cuotaFija;
+    private double saldoCapital;
+
+    //CONTRUCTOR
+    public CronogramaPago(int numeroCuota, double interes, double amortizacion, double cuotaFija, double saldoCapital){
+
+        this.numeroCuota = numeroCuota;
+        this.interes = interes;
+        this.amortizacion = amortizacion;
+        this.cuotaFija = cuotaFija;
+        this.saldoCapital = saldoCapital;
+    }
+
+    public int getNumeroCuota(){return numeroCuota; }
+    public double getInteres(){return interes; }
+    public double getAmortizacion(){return amortizacion; }
+    public double getCuotaFija(){return cuotaFija; }
+    public double getSaldoCapital(){return saldoCapital; }
+
+
+    public static List<CronogramaPago> cronogramaPago(
 
             double monto,
             LocalDate fechaCompra,
@@ -17,6 +43,8 @@ public class CronogramaPago {
             double ted
 
     ){
+
+        List<CronogramaPago> listaCronograma = new ArrayList<>();
 
         //todo: FECHAS Y DIAS ACUMULADOS
 
@@ -50,6 +78,10 @@ public class CronogramaPago {
 
             System.out.printf("Cuota %d | Interes: %.2f | amortizacion: %.2f | cuota: %.2f | Saldo: %.2f  %n",
                     i, interesTruncado, amortizacion, cuotaFija, saldoCapital);
+
+            CronogramaPago cuotaDetalle = new CronogramaPago(i,interesTruncado, amortizacion, cuotaFija,saldoCapital);
+            listaCronograma.add(cuotaDetalle);
         }
+        return listaCronograma;
     }
 }
