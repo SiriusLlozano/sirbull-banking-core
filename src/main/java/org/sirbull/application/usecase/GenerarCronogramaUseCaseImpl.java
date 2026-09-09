@@ -3,10 +3,11 @@ package org.sirbull.application.usecase;
 import org.sirbull.application.port.input.GenerarCronogramaUseCase;
 import org.sirbull.domain.model.CronogramaPago;
 import org.sirbull.domain.service.FinanzasUtil;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-
+@Service
 public class GenerarCronogramaUseCaseImpl implements GenerarCronogramaUseCase {
     @Override
     public List<CronogramaPago> generarCronograma(double monto, LocalDate fechaCompra, int cuotas, int diaCierre, int diaPago, double ted) {
