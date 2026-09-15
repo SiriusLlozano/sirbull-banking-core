@@ -1,34 +1,39 @@
 package org.sirbull.domain.service;
 
-import javax.swing.plaf.PanelUI;
-import java.lang.reflect.Array;
+import org.hibernate.usertype.BaseUserTypeSupport;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class FinanzasUtil {
 
-    // TODO : M1 paso 1 CALCULO DE FACTOR DE ACTUALIZACION Y TASA EFECTIVA DIARIA
-    public static double factorActualizacion(double ted, int diasAcumulados){
-        return 1/Math.pow((1+ ted),diasAcumulados);
+    private  static final MathContext MATH_CONTEXT = new MathContext(10, RoundingMode.HALF_UP);
+
+    // Cálculo del factor de actualización usando BigDecimal
+    public static BigDecimal factorActualizacion(BigDecimal ted, int diasAcumulados){
+        BigDecimal base = BigDecimal.ONE.add(ted, MATH_CONTEXT);
+        BigDecimal potencia = base.pow(diasAcumulados,MATH_CONTEXT);
+        return BigDecimal.ONE.divide(potencia, MATH_CONTEXT);
     }
 
-    // todo: M2 paso 2  CALCULAR LA SUMATORIA DE FACTORES
-    public static double calcularSumaFactores (int numeroCuotas, List<Integer> diasAcumulados, double ted){
-        double sumaFactor = 0.0;
+    // Cálculo de la sumatoria de factores
+    public static BigDecimal calcularSumaFactores (int numeroCuotas, List<Integer> diasAcumulados, BigDecimal ted){
+        BigDecimal sumaFactor = BigDecimal.ZERO;
         for (int i = 1;i<= numeroCuotas; i++){
-            sumaFactor += factorActualizacion(ted, diasAcumulados.get(i - 1));
+            BigDecimal factor = factorActualizacion(ted, diasAcumulados.get(i - 1));
+            sumaFactor = sumaFactor.add(factor, MATH_CONTEXT);
         }
         return sumaFactor;
     }
 
-    // TODO: M2 PASO 3 EL CALCULO DE LA CUOTA FIJA (SISTEMA FRANCES)
-
-   public static double calcularCuotaFija(double monto, double sumaFactores){
-
-        return monto / sumaFactores;
+    // Cálculo de la cuota fija (Sistema Francés) con BigDecimal
+    public static BigDecimal calcularCuotaFija(BigDecimal monto, BigDecimal sumaFactores){
+        return monto.divide(sumaFactores, MATH_CONTEXT);
     }
-
 
     public static List<LocalDate> fechaPago(LocalDate fechaCompra, int diaPago, int diaCierre, int numeroCuotas){
 
@@ -49,22 +54,15 @@ public class FinanzasUtil {
         return listaFechas;
     }
 
-
     public static List<Integer> calcularDiasAcumulados(LocalDate fechaCompra, List<LocalDate> listaFechas) {
         List<Integer> listaDias = new ArrayList<>();
-
         for (int i = 0; i < listaFechas.size(); i++) {
             int diasAcumulados = (int) ChronoUnit.DAYS.between(fechaCompra, listaFechas.get(i))+1;
 
             listaDias.add(diasAcumulados);
         }
-
         return listaDias;
     }
-
-
-
-
 }
 
 

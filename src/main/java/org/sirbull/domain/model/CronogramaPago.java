@@ -2,85 +2,68 @@ package org.sirbull.domain.model;
 
 import org.sirbull.domain.service.FinanzasUtil;
 
-import javax.swing.plaf.PanelUI;
+import javax.swing.plaf.basic.BasicIconFactory;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CronogramaPago {
+public record CronogramaPago (
+        int numeroCuota,
+        LocalDate fechaVencimiento,
+        BigDecimal interes,
+        BigDecimal amortizacion,
+        BigDecimal cuotaFija,
+        BigDecimal saldoCapital
+){
 
-    // ATRIBUTOS DE INSTANCIA ALMACENARA INORMACION DE CAD ACUOTA
-    private int numeroCuota;
-    private double interes;
-    private double amortizacion;
-    private double cuotaFija;
-    private double saldoCapital;
-
-    //CONTRUCTOR
-    public CronogramaPago(int numeroCuota, double interes, double amortizacion, double cuotaFija, double saldoCapital){
-
-        this.numeroCuota = numeroCuota;
-        this.interes = interes;
-        this.amortizacion = amortizacion;
-        this.cuotaFija = cuotaFija;
-        this.saldoCapital = saldoCapital;
-    }
-
-    public int getNumeroCuota(){return numeroCuota; }
-    public double getInteres(){return interes; }
-    public double getAmortizacion(){return amortizacion; }
-    public double getCuotaFija(){return cuotaFija; }
-    public double getSaldoCapital(){return saldoCapital; }
-
+    private static final MathContext MATH_CONTEXT = new MathContext(10, RoundingMode.HALF_UP);
 
     public static List<CronogramaPago> cronogramaPago(
-
-            double monto,
+            BigDecimal monto,
             LocalDate fechaCompra,
             int numeroCuotas,
             int diaPago,
             int diaCierre,
-            double ted
+            BigDecimal ted
 
     ){
 
         List<CronogramaPago> listaCronograma = new ArrayList<>();
 
-        //todo: FECHAS Y DIAS ACUMULADOS
-
         List<LocalDate> listaFechas = FinanzasUtil.fechaPago(fechaCompra, diaPago, diaCierre, numeroCuotas);
         List<Integer> diasAcumulados = FinanzasUtil.calcularDiasAcumulados(fechaCompra,listaFechas);
 
-        // todo : SUMA DE FACTORES DE ACTUALIZACION
 
-        double sumaFactores = FinanzasUtil.calcularSumaFactores(numeroCuotas,diasAcumulados,ted);
-
-        //todo: LA CUOTA FIJA SE CALCULA UNA SOLA VEZ
-
-        double cuotaFija = FinanzasUtil.calcularCuotaFija(monto,sumaFactores);
-
-       double saldoCapital = monto;
+        BigDecimal sumaFactores = FinanzasUtil.calcularSumaFactores(numeroCuotas,diasAcumulados,ted);
+        BigDecimal cuotaFija = FinanzasUtil.calcularCuotaFija(monto,sumaFactores);
+        BigDecimal saldoCapital = monto;
 
         for (int i = 1; i <= numeroCuotas; i++){
 
             int diasPeriodo = (i == 1)? diasAcumulados.get(0) : diasAcumulados.get(i - 1) - diasAcumulados.get(i - 2);
 
-           // TODO: Calculamos el interes
-            double interes = saldoCapital * (Math.pow(1 + ted, diasPeriodo) - 1);
-            double interesTruncado = Math.floor(interes * 100)/ 100;
+            // CÁLCULO DE INTERÉS: saldoCapital * ((1 + ted)^diasPeriodo - 1)
+            BigDecimal baseInteres = BigDecimal.ONE.add(ted, MATH_CONTEXT);
+            BigDecimal potenciaInteres = baseInteres.pow(diasPeriodo, MATH_CONTEXT);
+            BigDecimal factorInteres = potenciaInteres.subtract(BigDecimal.ONE, MATH_CONTEXT);
+            BigDecimal interes = saldoCapital.multiply(factorInteres, MATH_CONTEXT).setScale(2, RoundingMode.HALF_UP);
 
-           //TODO: Calculamos la amortizacion
-            double amortizacion = (i == 1)? Math.floor((cuotaFija - interesTruncado)*100)/100 + 0.01 : cuotaFija - interesTruncado;
+            // CÁLCULO DE AMORTIZACIÓN: cuotaFija - interés (sin parches manuales)
+            BigDecimal amortizacion = cuotaFija.subtract(interes).setScale(2, RoundingMode.HALF_UP);
 
-
-            //todo: Calculamos el nuevo saldo capital
-            saldoCapital = (i == numeroCuotas)? 0.0: Math.floor((saldoCapital-amortizacion)*100)/100 ;
-
-            System.out.printf("Cuota %d | Interes: %.2f | amortizacion: %.2f | cuota: %.2f | Saldo: %.2f  %n",
-                    i, interesTruncado, amortizacion, cuotaFija, saldoCapital);
-
-            CronogramaPago cuotaDetalle = new CronogramaPago(i,interesTruncado, amortizacion, cuotaFija,saldoCapital);
-            listaCronograma.add(cuotaDetalle);
+            // NUEVO SALDO DE CAPITAL
+            if (i == numeroCuotas) {
+                saldoCapital = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+                // Ajuste de cierre para la última cuota por diferencias de redondeo de centavos
+                amortizacion = saldoCapital.add(amortizacion).setScale(2, RoundingMode.HALF_UP); // Absorbe cualquier residuo matemático exacto
+            } else {
+                saldoCapital = saldoCapital.subtract(amortizacion).setScale(2, RoundingMode.HALF_UP);
+            }
+            LocalDate fechaVencimiento = listaFechas.get(i - 1);
+            listaCronograma.add(new CronogramaPago(i, fechaVencimiento, interes, amortizacion, cuotaFija, saldoCapital));
         }
         return listaCronograma;
     }

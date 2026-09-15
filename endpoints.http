@@ -1,12 +1,12 @@
-### Generar cronograma de pagos
-POST http://localhost:8080/api/cronograma
+### 1. Guardar un nuevo cronograma
+POST http://localhost:8080/api/cronogramas
 Content-Type: application/json
 
 {
-  "monto": 2500.00,
-  "fechaCompra": "2026-09-09",
-  "cuotas": 6,
-  "diaCierre": 20,
-  "diaPago": 5,
+  "monto": 1500.00,
+  "cuotasTotales": 12,
+  "diaPago": 15,
+  "diaCierre": 28,
+  "fechaCompra": "2026-09-14",
   "ted": 0.02
 }

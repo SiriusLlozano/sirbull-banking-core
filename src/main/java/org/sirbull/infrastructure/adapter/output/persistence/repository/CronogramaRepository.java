@@ -1,0 +1,9 @@
+package org.sirbull.infrastructure.adapter.output.persistence.repository;
+
+import org.sirbull.infrastructure.adapter.output.persistence.entity.CronogramaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CronogramaRepository extends JpaRepository<CronogramaEntity, Long> {
+}
